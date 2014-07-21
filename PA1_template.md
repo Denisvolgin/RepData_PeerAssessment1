@@ -7,8 +7,7 @@ Download the file, extract activity.csv and load the data into the activity data
 
 
 ```r
-fileUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
-download.file(fileUrl, destfile = "activity.zip", method = "curl")
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", destfile = "activity.zip", method = "curl")
 unzip("activity.zip")
 activity <- read.csv("./activity.csv")
 activity$date <- as.Date(activity$date)
@@ -57,7 +56,7 @@ Avg number of steps: 5-minute interval time series
 ```r
 averageSteps <- data.frame(cbind(activity$interval,tapply(activity$steps, activity$interval, mean, na.rm = TRUE)))
 colnames(averageSteps) <- c("interval", "steps")
-print(ggplot(data=averageSteps,aes(x=interval, y=steps)) + geom_line())
+print(ggplot(data = averageSteps,aes(x = interval, y = steps)) + geom_line())
 ```
 
 ![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
@@ -86,8 +85,8 @@ sum(is.na(activity$steps))
 ```
 
 ```r
-cleanData<-activity
-cleanData[is.na(cleanData[, 1]), 1]<-averageSteps[is.na(cleanData[, 1]),2]
+cleanData <- activity
+cleanData[is.na(cleanData[, 1]), 1] <- averageSteps[is.na(cleanData[, 1]),2]
 ```
 
 A histogram of the clean data
