@@ -3,93 +3,70 @@
 
 ## Loading and preprocessing the data
 
-Download the file, extract activity.csv and load into the activity dataframe
+Download the file, extract activity.csv and load the data into the activity dataframe
 
 ```{r}
-fileUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
-download.file(fileUrl, destfile = "Dataset.zip", method = "curl")
-unzip("Dataset.zip")
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", destfile = "activity.zip", method = "curl")
+unzip("activity.zip")
 activity <- read.csv("./activity.csv")
 activity$date <- as.Date(activity$date)
-head(activity)
-summary(activity)
 ```
+
 
 ## What is mean total number of steps taken per day?
 
-Daily step taken: histogram
+A histogram for the daily steps taken
 
 ```{r}
 library(ggplot2)
-q<-qplot(date, weight=activity$steps, data=activity, geom="histogram")
+q<-qplot(date, weight = activity$steps, data = activity, geom = "histogram")
 print(q)
-```
 
-Stats for the daily steps taken
-
-```{r}
 mean(tapply(activity$steps, activity$date, sum, na.rm = TRUE))
 median(tapply(activity$steps, activity$date, sum, na.rm = TRUE))
 ```
+
 
 ## What is the average daily activity pattern?
 
 Avg number of steps: 5-minute interval time series
 
 ```{r}
-averageSteps<-data.frame(cbind(activity$interval,tapply(activity$steps, activity$interval, mean, na.rm = TRUE)))
-colnames(averageSteps) <- c("interval","steps")
-q<-ggplot(data=averageSteps,aes(x=interval,y=steps)) +
-  geom_line()
-print(q)
+averageSteps <- data.frame(cbind(activity$interval,tapply(activity$steps, activity$interval, mean, na.rm = TRUE)))
+colnames(averageSteps) <- c("interval", "steps")
+print(ggplot(data = averageSteps,aes(x = interval, y = steps)) + geom_line())
+
+maxTime <- averageSteps[which.max(averageSteps$steps), "interval"]
+strftime(as.POSIXct(Sys.Date()) + as.difftime(round(maxTime/100), units = "hours") + as.difftime(maxTime%%100, units = "mins"), "%r", tz="UTC")
 ```
 
-An interval with the max number of steps taken
-
-```{r}
-maxTime<-averageSteps[which.max(averageSteps$steps),"interval"]
-strftime( as.POSIXct(Sys.Date()) + as.difftime(round(maxTime/100), units="hours")+ as.difftime(maxTime%%100, units="mins"), "%r",tz="UTC")
-```
 
 ## Imputing missing values
 
-Number of missing values
+Replace the missing values with averages
 
 ```{r}
 sum(is.na(activity$steps))
+cleanData <- activity
+cleanData[is.na(cleanData[, 1]), 1] <- averageSteps[is.na(cleanData[, 1]),2]
 ```
 
-Replace the missing values with the mean value
+A histogram of the clean data
 
 ```{r}
-cleanData<-activity
-cleanData[is.na(cleanData[, 1]), 1]<-averageSteps[is.na(cleanData[, 1]),2]
-```
+qplot(date, weight = cleanData$steps, data = cleanData, geom = "histogram")
 
-A histogram of the cleaned data
-
-```{r}
-qplot(date, weight=cleanData$steps, data=cleanData, geom="histogram")
-```
-
-Calculate and report the mean and media values. We can see that the values differ from the initial calculation, and have higher value. It is also observed in the graph above. Most days have an increased number of mean of steps, since the NAs have been replaced by the 5-minute interval mean.
-
-```{r}
 mean(tapply(cleanData$steps, cleanData$date, sum, na.rm = TRUE))
 median(tapply(cleanData$steps, cleanData$date, sum, na.rm = TRUE))
 ```
 
+
 ## Are there differences in activity patterns between weekdays and weekends?
 
-Append "Weekend" or "Weekday" to a new field, conditionally.
+Append "Weekend" or "Weekday" to a new field and plot the average of steps taken
 
 ```{r}
 library(lattice)
 cleanData$day <- as.factor(ifelse(weekdays(cleanData$date) %in% c("Saturday", "Sunday"), "Weekend", "Weekday"))
-```
-
-Plot the avg of steps
-
-```{r}
 xyplot(steps ~ interval | day, aggregate(steps ~ interval + day, cleanData, FUN = mean), layout = c(1, 2), type = "l", group = day)
 ```
